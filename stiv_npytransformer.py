@@ -2,8 +2,9 @@
 """
 Spyder Editor
 
-this script opens the raw stiv grib files and extracts the midwest region
-into hourly precip files in the ../stivnpys folder
+this script transforms the by hour npys into monthly npys in ../stivnpys/transformed
+
+then transforms into by month npy of shape [15,mondays,ys,xs] onto usb drive folder stivnpys
 """
 import pygrib
 from netCDF4 import Dataset
@@ -13,7 +14,7 @@ import cartopy.feature as cfeature
 import os
 import numpy as np
 
-lmon=[31,28,31,30,31,30,31,31,30,31,30,31]
+lmon=[31,28,31,30,31,30,31,30,30,31,30,31]
 
 st4ll=Dataset('/media/ats/Backup/stiv/ST4.2005050102.01h.nc')
 lats=st4ll.variables['latitude'][:]
@@ -24,36 +25,38 @@ grb = a.select(name='Total Precipitation')[0]
 bs=grb.values
 
 latss,latsn,lonsw,lonse=400,600,700,950
-def parser(inarr): #function to parse the area give the x-y coords in the line above
+
+def parser(inarr):
     return inarr[latss:latsn,lonsw:lonse]
-def stringer(innum): #function to turn integer X or XX into a '0X' or 'XX' string
+def stringer(innum):
     if innum<10:
         outs='0'+str(innum)
     else:
         outs=str(innum)
     return outs
 
-#loop to extract data from grib to npy
+#transform by hour npys to by month summary npys
 for yr in range(2002,2017):
-    if os.path.exists('/home/ats/stivnpys/'+str(yr))==False:
-        os.mkdir('/home/ats/stivnpys/'+str(yr))
-    for mon in range(8,9):
-        if os.path.exists('/home/ats/stivnpys/'+str(yr)+'/'+str(mon))==False:
-            os.mkdir('/home/ats/stivnpys/'+str(yr)+'/'+str(mon))
+    if os.path.exists('/home/ats/stivnpys/transformed/'+str(yr))==False:
+        os.mkdir('/home/ats/stivnpys/transformed/'+str(yr))
+    for mon in range(5,9):
+        aout=np.zeros((lmon[mon-1],24,200,250))
         for d in range(1,lmon[mon-1]+1):
             sd=stringer(d)
             for hr in range(0,24):
+                sh=stringer(hr)
                 try:
-                    sh=stringer(hr)
-                    a = pygrib.open('/media/ats/Backup/stiv/'+str(yr)+'/ST4.'+str(yr)+'0'+str(mon)+sd+sh+'.01h')
-                    grb = a.select(name='Total Precipitation')[0]
-                    bs=grb.values
-                    bsm=parser(bs)
-                    np.save('/home/ats/stivnpys/'+str(yr)+'/'+str(mon)+'/'+str(yr)+'0'+str(mon)+sd+sh+'.npy',bsm.data)
+
+                    a=np.load('/home/ats/stivnpys/'+str(yr)+'/'+str(mon)+'/'+str(yr)+'0'+str(mon)+sd+sh+'.npy')
                     
                 except:
                     print('FAIL, '+str(yr)+'0'+str(mon)+sd+sh)
+                    a=a0
+                aout[d-1,hr,:,:]=a
+                a0=a
             print(str(yr)+'0'+str(mon)+sd)
+        np.save('/home/ats/stivnpys/transformed/'+str(yr)+'/'+str(mon)+'.npy',aout)
+
             
 
 # lon=parser(lons)
