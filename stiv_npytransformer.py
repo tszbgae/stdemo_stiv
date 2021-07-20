@@ -56,7 +56,14 @@ for yr in range(2002,2017):
                 a0=a
             print(str(yr)+'0'+str(mon)+sd)
         np.save('/home/ats/stivnpys/transformed/'+str(yr)+'/'+str(mon)+'.npy',aout)
+#%%
 
+for mon in range(5,9):
+    aout=np.zeros((15,lmon[mon-1],24,200,250))
+    for yr in range(2002,2017):
+        a=np.load('/home/ats/stivnpys/transformed/'+str(yr)+'/'+str(mon)+'.npy')
+        aout[yr-2002,:,:,:,:]=a
+    np.save('/media/ats/Backup/stivnpys/'+str(mon)+'.npy',aout)
             
 
 # lon=parser(lons)
