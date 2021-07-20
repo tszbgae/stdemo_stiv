@@ -13,7 +13,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import os
 import numpy as np
-
+#%%
 lmon=[31,28,31,30,31,30,31,30,30,31,30,31]
 
 st4ll=Dataset('/media/ats/Backup/stiv/ST4.2005050102.01h.nc')
@@ -68,6 +68,8 @@ for mon in range(5,9):
 #open june through august, save off only OH region and zero out any values greater than 1000 (missing values)
 a=np.load('/media/ats/Backup/stivnpys/6.npy')
 aa=np.load('/media/ats/Backup/stivnpys/7.npy')
+
+
 aaa=np.load('/media/ats/Backup/stivnpys/8.npy')
 a=np.concatenate((a,aa,aaa),axis=1)
 a[a>1000]=0
@@ -77,4 +79,27 @@ sp,pn,wp,ep=65,155,80,170
 
 #it turns out we need to do some further transformation to make this work quickly when only looking at OH
 aa=a[:,:,:,sp:pn,wp:ep]
-np.save('/media/ats/Backup/stivnpys/jja_oh.npy',a
+np.save('/media/ats/Backup/stivnpys/jja_oh.npy',a)
+
+#%%
+#process ncep reanalysis files for midwest region in jun-aug for 850,700,500,300
+
+for yr in range(2002,2017):
+    hgts=Dataset('/media/ats/Backup/data/hgt.'+str(yr)+'.nc')
+    if yr%4==0:
+        offset=4
+    else:
+        offset=0
+    start=offset+151*4
+    end=offset+242*4
+    np.save('/media/ats/Backup/data/hgtcutout.'+str(yr)+'.npy',hgts.variables['hgt'][start:end,np.asarray([2,3,5,7]),18:23,106:115].data)
+#%%
+#save off only 12Z and all years into a single file
+bout=np.zeros((15,91,4,5,9))
+for yr in range(2002,2017):
+    a=np.load('/media/ats/Backup/data/hgtcutout.'+str(yr)+'.npy')
+    b=a[2::4,:,:,:]
+    bout[2002-yr,:,:,:,:]=b
+np.save('/media/ats/Backup/data/allhgts02_16.npy',bout)
+    
+
