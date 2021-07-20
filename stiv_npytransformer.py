@@ -65,23 +65,16 @@ for mon in range(5,9):
         aout[yr-2002,:,:,:,:]=a
     np.save('/media/ats/Backup/stivnpys/'+str(mon)+'.npy',aout)
             
+#open june through august, save off only OH region and zero out any values greater than 1000 (missing values)
+a=np.load('/media/ats/Backup/stivnpys/6.npy')
+aa=np.load('/media/ats/Backup/stivnpys/7.npy')
+aaa=np.load('/media/ats/Backup/stivnpys/8.npy')
+a=np.concatenate((a,aa,aaa),axis=1)
+a[a>1000]=0
+yps,ypn,xpw,xpe=37.3,42.5,-89,-81.4
+yps,ypn,xpw,xpe=38.5,41,-85,-82
+sp,pn,wp,ep=65,155,80,170
 
-# lon=parser(lons)
-# lat=parser(lats)
-# b=parser(bs)
-
-# yps,ypn,xpw,xpe=37.3,42.5,-89,-81.4
-
-# fig=plt.figure(figsize=(7,10),dpi=200)
-# ax = plt.axes(projection=ccrs.PlateCarree())
-# ax.coastlines()
-# ax.add_feature(cfeature.STATES)
-# ax.set_xlim(xpw,xpe) 
-# ax.set_ylim(yps,ypn)
-# # a=np.where((hours==x) & (conc[:,2]==0))[0]
-# ax.pcolormesh(lon,lat,b)
-# #print(outa[x][0,1],outa[x][:,5])
-# # plt.title(str(t) + ' to '+str(t+1))
-# # plt.savefig(outdir+str(t)+'_' + str(.75)+'_gt1000.png')
-# plt.show()
-# plt.close()
+#it turns out we need to do some further transformation to make this work quickly when only looking at OH
+aa=a[:,:,:,sp:pn,wp:ep]
+np.save('/media/ats/Backup/stivnpys/jja_oh.npy',a

@@ -18,38 +18,28 @@ lmon=[31,28,31,30,31,30,31,31,30,31,30,31]
 st4ll=Dataset('/media/ats/Backup/stiv/ST4.2005050102.01h.nc')
 lats=st4ll.variables['latitude'][:]
 lons=st4ll.variables['longitude'][:]
-
-a = pygrib.open('/media/ats/Backup/stiv/2017/ST4.2017050100.01h')
-grb = a.select(name='Total Precipitation')[0]
-bs=grb.values
-
 latss,latsn,lonsw,lonse=400,600,700,950
 def parser(inarr): #function to parse the area give the x-y coords in the line above
     return inarr[latss:latsn,lonsw:lonse]
 lon=parser(lons)
 lat=parser(lats)
 
-a=np.load('/media/ats/Backup/stivnpys/6.npy')
-aa=np.load('/media/ats/Backup/stivnpys/7.npy')
-aaa=np.load('/media/ats/Backup/stivnpys/8.npy')
-a=np.concatenate((a,aa,aaa),axis=1)
-a[a>1000]=0
-yps,ypn,xpw,xpe=37.3,42.5,-89,-81.4
+
+#xlim/ylim bounds for mapping
 yps,ypn,xpw,xpe=38.5,41,-85,-82
+#bounds for OH region for lat/lon
 sp,pn,wp,ep=65,155,80,170
-
-# #it turns out we need to do some further transformation to make this work quickly when only looking at OH
-# aa=a[:,:,:,sp:pn,wp:ep]
-# np.save('/media/ats/Backup/stivnpys/jja_oh.npy',aa)
+lonaa=lon[sp:pn,wp:ep]
+lataa=lat[sp:pn,wp:ep]
 
 
+aa=np.load('/media/ats/Backup/stivnpys/jja_oh.npy')
 ptsx=[-84.14,-84.20,-84.02,-83.81,-84.20,-83.8,-83]
 ptsy=[39.63,39.76,39.82,39.92,40.04,40.35,39.96]
 
 
 
-lonaa=lon[sp:pn,wp:ep]
-lataa=lat[sp:pn,wp:ep]
+
 # for x in range(24):
 #     fig=plt.figure(figsize=(7,10),dpi=200)
 #     ax = plt.axes(projection=ccrs.PlateCarree())
