@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
+from sklearn.cluster import SpectralClustering
 import numpy as np
 import matplotlib.pyplot as plt
 import time
@@ -64,13 +65,22 @@ st.write("""
 
 level = st.sidebar.selectbox('select level', ('850 hPa', '500 hPa'))
 
-classifier_name = st.sidebar.selectbox('select classifier', ('Kmeans','DBscan'))
+classifier_name = st.sidebar.selectbox('select classifier', ('Kmeans','Spectral'))
 
-def get_params(classifier_name):
+randornot=st.sidebar.radio('Random Cluster State?', ('Yes', 'No'))
+
+def get_params(classifier_name,randornot):
     params=dict()
     if classifier_name == 'Kmeans':
         K=st.sidebar.slider('# clusters',2,9)
         params['n_clusters'] = K
+    elif classifier_name == 'Spectral':
+        K=st.sidebar.slider('# clusters',2,9)
+        params['n_clusters'] = K
+    if randornot=='Yes':
+        params['randornot']=np.random.randint(1,high=100)
+    else:
+        params['randornot']=0
     # elif classifier_name == 'SVM':
     #     c=st.sidebar.slider('C',1,10)
     #     params['C'] = c
@@ -84,10 +94,20 @@ def get_params(classifier_name):
 def get_class(classifier_name, params):
     if classifier_name == 'Kmeans':
         st.write('using ', classifier_name, 'with ', params['n_clusters'], ' clusters')
-        clf=KMeans(n_clusters=params['n_clusters'])
+        clf=KMeans(n_clusters=params['n_clusters'],random_state=params['randornot'])
         kmeans=clf.fit(X)
         labs=kmeans.labels_
         cc=np.reshape(kmeans.cluster_centers_,(p['n_clusters'],5,9))
+    elif classifier_name == 'Spectral':
+        st.write('using ', classifier_name, 'with ', params['n_clusters'], ' clusters')
+        clf=SpectralClustering(n_clusters=params['n_clusters'],random_state=params['randornot'])
+        kmeans=clf.fit(X)
+        labs=kmeans.labels_
+        cc=np.zeros((params['n_clusters'],5,9))
+        Xr=np.reshape(X,(1365,5,9))
+        for x in range(params['n_clusters']):
+            cc0=Xr[labs==x]
+            cc[x]=np.mean(cc0,axis=0)
     # elif classifier_name == 'SVM':
     #     clf=SVC(C=params['C'])
     # elif classifier_name == 'Random Forest':
@@ -107,7 +127,7 @@ def get_dataset(level):
     return X
     
 X = get_dataset(level)
-p=get_params(classifier_name)
+p=get_params(classifier_name,randornot)
 labs,cc=get_class(classifier_name,p)
 #xtr,xte,ytr,yte=train_test_split(X,y,test_size=0.2,random_state=125)
 # kmeans=clf.fit(X)
@@ -128,49 +148,40 @@ cluster_number = st.sidebar.selectbox('select cluster member', tuple(clstmbr))
 
 st.write('Cluster '+str(cluster_number))
 
+col1, col2 = st.beta_columns([3,2])
+with col2:
+    st.set_option('deprecation.showPyplotGlobalUse', False)
+    cmap = plt.get_cmap('jet')
+    c=amr[labs==(cluster_number-1)]
+    cm=np.mean(c,axis=0)
+    cmap = plt.get_cmap('jet')
+    fig=plt.figure(figsize=(5,5),dpi=200)
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.coastlines()
+    ax.add_feature(cfeature.STATES)
+    ax.set_xlim(xpw,xpe) 
+    ax.set_ylim(yps,ypn)
+    # a=np.where((hours==x) & (conc[:,2]==0))[0]
+    #am=np.mean(aa[:,:,17:,:,:],axis=(0,1,2))
+    #print(am.max())
+    ax.pcolormesh(lonaa,lataa,cm,vmin=.1,vmax=.4,cmap=cmap)
+    plt.show()
+    st.pyplot(fig)
+with col1:
+    st.set_option('deprecation.showPyplotGlobalUse', False)
+    cmap = plt.get_cmap('jet')
+    fig=plt.figure(figsize=(7,10),dpi=200)
+    ax = plt.axes(projection=ccrs.PlateCarree())
+    ax.coastlines()
+    ax.add_feature(cfeature.STATES)
+    mn=np.around(cc.min(),decimals=-1)
+    mx=np.around(cc.max(),decimals=-1)
+    rng=int((mx-mn)/10)
+    ax.contourf(lonsraa,latsraa,cc[int(cluster_number)-1],levels=np.linspace(mn,mx,rng),cmap=cmap)
+    plt.show()
+    st.pyplot(fig)
 
-st.set_option('deprecation.showPyplotGlobalUse', False)
-cmap = plt.get_cmap('jet')
-c=amr[labs==(cluster_number-1)]
-cm=np.mean(c,axis=0)
-cmap = plt.get_cmap('jet')
-fig=plt.figure(figsize=(7,10),dpi=200)
-ax = plt.axes(projection=ccrs.PlateCarree())
-ax.coastlines()
-ax.add_feature(cfeature.STATES)
-ax.set_xlim(xpw,xpe) 
-ax.set_ylim(yps,ypn)
-# a=np.where((hours==x) & (conc[:,2]==0))[0]
-#am=np.mean(aa[:,:,17:,:,:],axis=(0,1,2))
-#print(am.max())
-ax.pcolormesh(lonaa,lataa,cm,vmin=.1,vmax=.4,cmap=cmap)
-plt.show()
-st.pyplot(fig)
 
-st.set_option('deprecation.showPyplotGlobalUse', False)
-cmap = plt.get_cmap('jet')
-fig=plt.figure(figsize=(7,10),dpi=200)
-ax = plt.axes(projection=ccrs.PlateCarree())
-ax.coastlines()
-ax.add_feature(cfeature.STATES)
-mn=np.around(cc.min(),decimals=-1)
-mx=np.around(cc.max(),decimals=-1)
-rng=int((mx-mn)/10)
-ax.contourf(lonsraa,latsraa,cc[int(cluster_number)-1],levels=np.linspace(mn,mx,rng),cmap=cmap)
-plt.show()
-st.pyplot(fig)
-
-# my_bar = st.progress(0)
-# for percent_complete in range(100):
-#     print('al;skdjfsdkljf', percent_complete)
-#     time.sleep(0.1)
-#     my_bar.progress(percent_complete + 1)
-    
-# with st.spinner(text='In progress'):
-#     for x in range(3):
-#         st.spinner(text='in progress '+str(x))
-#         time.sleep(5)
-# st.success('Done')
 
 
 
