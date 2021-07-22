@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import time
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import os
 #%%
 lmon=[31,28,31,30,31,30,31,31,30,31,30,31]
 
@@ -155,6 +156,7 @@ cluster_number = st.slider('select cluster member', min(clstmbr),max(clstmbr))
 
 st.write('Cluster: '+str(cluster_number)+', '+str(clstcnt[cluster_number-1])+' members')
 
+#plot the cluster centers and mean precip for cluster center
 col1, col2 = st.beta_columns([3,2])
 with col2:
     st.set_option('deprecation.showPyplotGlobalUse', False)
@@ -188,6 +190,31 @@ with col1:
     plt.show()
     st.pyplot(fig)
 
+#archive the images for all clusters and have a progress bar that shows image creation
+percent_complete=0
+my_bar = st.progress(0)
+if os.path.exists('/home/ats/midwestprecip/results/'+str(p['n_clusters'])+'_'+level+'_'+classifier_name)==False:
+    os.mkdir('/home/ats/midwestprecip/results/'+str(p['n_clusters'])+'_'+level+'_'+classifier_name)
+    savedir='/home/ats/midwestprecip/results/'+str(p['n_clusters'])+'_'+level+'_'+classifier_name+'/'
+    for x in range(p['n_clusters']):
+        st.set_option('deprecation.showPyplotGlobalUse', False)
+        cmap = plt.get_cmap('jet')
+        fig=plt.figure(figsize=(7,10),dpi=200)
+        ax = plt.axes(projection=ccrs.PlateCarree())
+        ax.coastlines()
+        ax.add_feature(cfeature.STATES)
+        mn=np.around(cc.min(),decimals=-1)
+        mx=np.around(cc.max(),decimals=-1)
+        rng=int((mx-mn)/10)
+        ax.contourf(lonsraa,latsraa,cc[x],levels=np.linspace(mn,mx,rng),cmap=cmap)
+        plt.savefig(savedir+str(x)+'_'+'hgts.png')
+        
+        print('imagesave', percent_complete)
+        my_bar.progress(percent_complete + ((x+1)/(p['n_clusters'])))
+else:
+    my_bar.progress(100)
+    
+                    
 
 
 
